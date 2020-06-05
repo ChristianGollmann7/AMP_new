@@ -364,7 +364,7 @@ void run_TAS_lock(int numthreads, int iterations, int numofiter)
             }           
         }
         end = std::chrono::high_resolution_clock::now();
-        runtime = std::chrono::duration_cast<std::chrono::duration<double>>(end - start).count();
+        runtime = std::chrono::duration_cast<std::chrono::duration<double>>(end - start).count;
         Time[n] = runtime;
 
         for (int i = 0; i < numthreads; ++i)
