@@ -19,14 +19,16 @@ class TAS_lock {
     std::atomic<bool> state;
     
     public:
+    std::atomic<int> call;
 
     TAS_lock(){
         state = false;
+        call = 0;
     }
     
     void lock(){
         while (state.exchange(true))
-        {}
+        {call.fetch_add(1);}
     }
 
     void unlock(){
@@ -42,13 +44,15 @@ class TTAS_lock {
     std::atomic<bool> state;
     
     public:
+    std::atomic<int> call;
     TTAS_lock(){
+        call = 0;
         state = false;
     }
     void lock(){
         while (true) {
             while (state.load()) 
-            {}
+            {call.fetch_add(1);}
             if (!state.exchange(true))
                 return;
         }
@@ -315,7 +319,7 @@ void run_TAS_lock(int numthreads, int iterations) {
                 {
                     counter++;
                     turns[tid*8]++;
-                    std::cout << "Thread " << tid << " is in critical section" << std::endl;
+                    //std::cout << "Thread " << tid << " is in critical section" << std::endl;
                 }
             }
             catch (int j) {
@@ -333,6 +337,7 @@ void run_TAS_lock(int numthreads, int iterations) {
     for (int i = 0; i < numthreads; ++i)
         std::cout << "turns[" << i << "] is " << turns[i*8] << std::endl;
     std::cout << std::endl << "runtime " << runtime << " s" << std::endl;
+    std::cout << "call: " << mylock.call/(numthreads*iterations) << std::endl;
 
 }
 
@@ -368,7 +373,7 @@ void run_TTAS_lock(int numthreads, int iterations) {
                 {
                     counter++;
                     turns[std::max(tid*8-1,0)]++;
-                    std::cout << "Thread " << tid << " is in critical section" << std::endl;
+                    //std::cout << "Thread " << tid << " is in critical section" << std::endl;
                 }
             }
             catch (int j) {
@@ -386,6 +391,7 @@ void run_TTAS_lock(int numthreads, int iterations) {
     for (int i = 0; i < numthreads; ++i)
         std::cout << "turns[" << i << "] is " << turns[std::max(i*8-1,0)] << std::endl;
     std::cout << std::endl << "runtime " << runtime << " s" << std::endl;
+    std::cout << "call: " << mylock.call/(numthreads*iterations) << std::endl;
 
 }
 
