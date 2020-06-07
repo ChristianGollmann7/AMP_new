@@ -1,6 +1,6 @@
 CXX=g++
 # For Linux
-CXXFLAGS=-std=c++11 -Wall -pedantic -O3 -march=native -fopenmp
+CXXFLAGS=-std=c++11 -Wall -pedantic -O3 -march=native -fopenmp -w
   
 .DEFAULT_GOAL := all
 
