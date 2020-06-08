@@ -1,2 +1,0 @@
-NameOfLock;NumberOfIterations;NumberOfThreads;RunTime;HowFair;Timevar
-Native_lock;10000;10;0.29148;1031.38;40.8072

@@ -1,2 +1,0 @@
-NameOfLock;NumberOfIterations;NumberOfThreads;RunTime;HowFair;Timevar
-omp_critical;10000;37;0.34136;638.457;47.7904

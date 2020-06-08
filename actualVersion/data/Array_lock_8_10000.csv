@@ -1,2 +1,2 @@
 NameOfLock;NumberOfIterations;NumberOfThreads;RunTime;HowFair;Timevar
-Array_lock;10000;8;0.3354;0;46.956
+Array_lock;10000;8;0.16514;0;23.1196
