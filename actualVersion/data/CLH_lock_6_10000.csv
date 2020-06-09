@@ -1,2 +1,2 @@
 NameOfLock;NumberOfIterations;NumberOfThreads;RunTime;HowFair;Timevar
-CLH_lock;10000;6;0.09672;2.13437;13.5408
+CLH_lock;10000;6;0.16192;0.471405;22.6688

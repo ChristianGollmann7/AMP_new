@@ -1,2 +1,2 @@
 NameOfLock;NumberOfIterations;NumberOfThreads;RunTime;HowFair;Timevar
-MCS_lock;10000;24;0.09894;0.471405;13.8516
+MCS_lock;10000;24;0.08934;0.471405;12.5076

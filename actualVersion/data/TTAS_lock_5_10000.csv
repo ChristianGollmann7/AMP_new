@@ -1,2 +1,2 @@
 NameOfLock;NumberOfIterations;NumberOfThreads;RunTime;HowFair;Timevar
-TTAS_lock;10000;5;0.05254;2837.41;7.3556
+TTAS_lock;10000;5;0.13924;1673.06;19.4936
