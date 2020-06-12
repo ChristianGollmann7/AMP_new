@@ -1,0 +1,2 @@
+NameOfLock;NumberOfIterations;NumberOfThreads;RunTime;HowFair;Timevar;HowOftenWhile
+Ticket_lock;1000;34;1.5093;0.492153;211.302;1125
