@@ -286,10 +286,10 @@ long int CS(long int counter, int iterations, double *turns,int tid)
             {
                 counter++;
                 turns[tid*8]++;
-               /* for (int i = 0; i < 1200;i++)
+                for (int i = 0; i < 120;i++)
                 {
                     k = log(i);
-                }*/
+                }
 		int *ptr = new int[10];
 		for (int i = 0; i < 10; i++)
 			ptr[i] = 42;
@@ -351,6 +351,7 @@ void run_TAS_lock(int numthreads, int iterations, int numofiter)
 	    counter = 0;
         std::atomic<int> c;
         c = 0;
+	INIT_TURNS
         #pragma omp parallel private(tid) shared(counter,start,end,c)
         {		    
             tid = omp_get_thread_num();
@@ -395,6 +396,7 @@ void run_TTAS_lock(int numthreads, int iterations, int numofiter)
 	    counter = 0;
         std::atomic<int> c;
         c = 0;
+	INIT_TURNS
         #pragma omp parallel private(tid) shared(counter,start,end,c)
         {		    
             tid = omp_get_thread_num();
@@ -441,6 +443,7 @@ void run_Ticket_lock(int numthreads, int iterations, int numofiter)
 	    counter = 0;
         std::atomic<int> c;
         c = 0;
+	INIT_TURNS
         #pragma omp parallel private(tid) shared(counter,start,end,c)
         {		    
             tid = omp_get_thread_num();
@@ -487,6 +490,7 @@ void run_Array_lock(int numthreads, int iterations, int numofiter)
 	    counter = 0;
         std::atomic<int> c;
         c = 0;
+	INIT_TURNS
         #pragma omp parallel private(tid) shared(counter,start,end,c)
         {		    
             thread_local int mySlot;
@@ -534,6 +538,7 @@ void run_Array_lock_padded(int numthreads, int iterations, int numofiter)
 	    counter = 0;
         std::atomic<int> c;
         c = 0;
+	INIT_TURNS
         #pragma omp parallel private(tid) shared(counter,start,end,c)
         {		    
             thread_local int mySlot;
@@ -581,6 +586,7 @@ void run_CLH_lock(int numthreads, int iterations, int numofiter)
 	    counter = 0;
         std::atomic<int> c;
         c = 0;
+	INIT_TURNS
         #pragma omp parallel private(tid) shared(counter,start,end,c)
         {		    
             thread_local QNode* pointerToNode;
@@ -628,6 +634,7 @@ void run_MCS_lock(int numthreads, int iterations, int numofiter)
 	    counter = 0;
         std::atomic<int> c;
         c = 0;
+	INIT_TURNS
         #pragma omp parallel private(tid) shared(counter,start,end,c)
         {		    
             thread_local Node my;
@@ -673,6 +680,7 @@ void run_Native_lock(int numthreads, int iterations, int numofiter)
         auto start = std::chrono::high_resolution_clock::now();
         auto end = std::chrono::high_resolution_clock::now();
 	counter = 0;
+	INIT_TURNS
         #pragma omp parallel private(tid) shared(counter,start,end)
         {		    
             tid = omp_get_thread_num();
@@ -712,6 +720,7 @@ void run_omp_critical(int numthreads, int iterations, int numofiter)
         auto start = std::chrono::high_resolution_clock::now();
         auto end = std::chrono::high_resolution_clock::now();
 	counter = 0;
+	INIT_TURNS
         #pragma omp parallel private(tid) shared(counter,start,end)
         {		    
             tid = omp_get_thread_num();
