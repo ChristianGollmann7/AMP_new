@@ -16,16 +16,24 @@
 #define SETUP double totruntime = 0; \
               double Timevar = 0; \
               double HowFair = 0; \
+              double HowFairWhile = 0; \
               int tid; \
               long int counter = 0; \
               double Verteilung[numthreads]; \
+              double VerteilungWhile[numthreads]; \
               double Time[numofiter]; \
               int len = 0; \
+              int lenWhile = 0; \
               double var = 0; \
-              double turns[(numthreads-1)*8+1];
+              double varWhile = 0; \
+              double turns[(numthreads-1)*8+1]; \
+              double HowOftenWhile[(numthreads-1)*8+1];
 
 #define INIT_TURNS for (int i = 0; i < numthreads; ++i) \
                    turns[i*8] = 0;
+
+#define INIT_WHILE for (int i = 0; i < numthreads; ++i) \
+                   HowOftenWhile[i*8] = 0;
 
 #define POSTPROCESSING for (int i = 0; i < numthreads; ++i) \
                        { \
@@ -34,6 +42,13 @@
                        len = sizeof(Verteilung)/sizeof(Verteilung[0]); \
                        var = Varianz(Verteilung,len); \
                        HowFair = HowFair + var; \
+                       for (int i = 0; i < numthreads; ++i) \
+                       { \
+                           VerteilungWhile[i] = HowOftenWhile[i*8]; \
+                       } \
+                       lenWhile = sizeof(VerteilungWhile)/sizeof(VerteilungWhile[0]); \
+                       varWhile = Varianz(VerteilungWhile,lenWhile); \
+                       HowFairWhile = HowFairWhile + varWhile; \
                        totruntime = totruntime + runtime; 
 
 
@@ -321,13 +336,13 @@ double Varianz(double *field,int len)
     return var;
 }
 
-void output(std::string Lockname, int iterations, int numthreads, int numofiter, double totruntime, double HowFair, double Timevar, long int howOften)
+void output(std::string Lockname, int iterations, int numthreads, int numofiter, double totruntime, double HowFair, double Timevar, long int howOften, double howOftenWhileDev)
 {
     file_name = "data/"+Lockname+"_"+std::to_string(numthreads)+"_"+std::to_string(iterations)+".csv";
     std::ofstream myfile;
     myfile.open (file_name);
-    myfile << "NameOfLock" << ";" <<"NumberOfIterations" << ";" << "NumberOfThreads"<< ";" << "RunTime" << ";" << "HowFair" << ";" << "Timevar" << ";" << "HowOftenWhile" << "\n";
-    myfile << Lockname << ";" << iterations << ";" << numthreads << ";" << totruntime/numofiter << ";" << HowFair/numofiter << ";" << Timevar/numofiter << ";" << howOften/numofiter;	  
+    myfile << "NameOfLock" << ";" <<"NumberOfIterations" << ";" << "NumberOfThreads"<< ";" << "RunTime" << ";" << "HowFair" << ";" << "Timevar" << ";" << "HowOftenWhile" << ";" << "HowOftenWhileDeviation" << "\n";
+    myfile << Lockname << ";" << iterations << ";" << numthreads << ";" << totruntime/numofiter << ";" << HowFair/numofiter << ";" << Timevar/numofiter << ";" << howOften/numofiter << ";" << howOftenWhileDev/numofiter;	  
     myfile << std::endl;
     myfile.close();
 }
@@ -349,10 +364,11 @@ void run_TAS_lock(int numthreads, int iterations, int numofiter)
         auto start = std::chrono::high_resolution_clock::now();
         auto end = std::chrono::high_resolution_clock::now();
 	    counter = 0;
-        std::atomic<int> c;
-        c = 0;
-	INIT_TURNS
-        #pragma omp parallel private(tid) shared(counter,start,end,c)
+        int u = 0;
+        int c = 0;
+	    INIT_TURNS
+        INIT_WHILE
+        #pragma omp parallel private(tid) shared(counter,start,end,c,u)
         {		    
             tid = omp_get_thread_num();
             #pragma omp barrier
@@ -360,7 +376,9 @@ void run_TAS_lock(int numthreads, int iterations, int numofiter)
                 start = std::chrono::high_resolution_clock::now();
             while(counter < iterations)
             {
-                c += mylock.lock();
+                u = mylock.lock();
+                c += u;
+                HowOftenWhile[tid*8] += (double)u/iterations;
                 counter = CS(counter,iterations,turns,tid);
                 mylock.unlock();
             }     
@@ -374,7 +392,7 @@ void run_TAS_lock(int numthreads, int iterations, int numofiter)
         POSTPROCESSING
     }   
     Timevar = Varianz(Time,numofiter);
-    output("TAS_lock",iterations,numthreads,numofiter,totruntime,HowFair,Timevar,BigC);
+    output("TAS_lock",iterations,numthreads,numofiter,totruntime,HowFair,Timevar,BigC,HowFairWhile);
 }
 
 ///////////////////////////////////////////////////////////// TTAS
@@ -394,10 +412,11 @@ void run_TTAS_lock(int numthreads, int iterations, int numofiter)
         auto start = std::chrono::high_resolution_clock::now();
         auto end = std::chrono::high_resolution_clock::now();
 	    counter = 0;
-        std::atomic<int> c;
-        c = 0;
-	INIT_TURNS
-        #pragma omp parallel private(tid) shared(counter,start,end,c)
+        double u = 0;
+        int c = 0;
+	    INIT_TURNS
+        INIT_WHILE
+        #pragma omp parallel private(tid) shared(counter,start,end,c,u)
         {		    
             tid = omp_get_thread_num();
             #pragma omp barrier
@@ -405,7 +424,9 @@ void run_TTAS_lock(int numthreads, int iterations, int numofiter)
                 start = std::chrono::high_resolution_clock::now();
             while(counter < iterations)
             {
-                c += mylock.lock();
+                u = mylock.lock();
+                c += u;
+                HowOftenWhile[tid*8] += u/iterations;
                 counter = CS(counter,iterations,turns,tid);
                 mylock.unlock();
             }
@@ -420,7 +441,7 @@ void run_TTAS_lock(int numthreads, int iterations, int numofiter)
         POSTPROCESSING
     }   
     Timevar = Varianz(Time,numofiter);
-    output("TTAS_lock",iterations,numthreads,numofiter,totruntime,HowFair,Timevar,BigC);
+    output("TTAS_lock",iterations,numthreads,numofiter,totruntime,HowFair,Timevar,BigC,HowFairWhile);
 }
 
 ///////////////////////////////////////////////////////////// Ticket
@@ -441,9 +462,10 @@ void run_Ticket_lock(int numthreads, int iterations, int numofiter)
         auto start = std::chrono::high_resolution_clock::now();
         auto end = std::chrono::high_resolution_clock::now();
 	    counter = 0;
-        std::atomic<int> c;
-        c = 0;
-	INIT_TURNS
+        int u = 0;
+        int c = 0;
+	    INIT_TURNS
+        INIT_WHILE
         #pragma omp parallel private(tid) shared(counter,start,end,c)
         {		    
             tid = omp_get_thread_num();
@@ -452,7 +474,9 @@ void run_Ticket_lock(int numthreads, int iterations, int numofiter)
                 start = std::chrono::high_resolution_clock::now();
             while(counter < iterations)
             {
-                c += mylock.lock();
+                u = mylock.lock();
+                c += u;
+                HowOftenWhile[tid*8] += (double)u/iterations;
                 counter = CS(counter,iterations,turns,tid);
                 mylock.unlock();
             }
@@ -467,7 +491,7 @@ void run_Ticket_lock(int numthreads, int iterations, int numofiter)
         POSTPROCESSING   
     }   
     Timevar = Varianz(Time,numofiter);
-    output("Ticket_lock",iterations,numthreads,numofiter,totruntime,HowFair,Timevar,BigC);
+    output("Ticket_lock",iterations,numthreads,numofiter,totruntime,HowFair,Timevar,BigC,HowFairWhile);
 }
 
 ///////////////////////////////////////////////////////////// Array
@@ -488,9 +512,10 @@ void run_Array_lock(int numthreads, int iterations, int numofiter)
         auto start = std::chrono::high_resolution_clock::now();
         auto end = std::chrono::high_resolution_clock::now();
 	    counter = 0;
-        std::atomic<int> c;
-        c = 0;
-	INIT_TURNS
+        int u = 0;
+        int c = 0;
+	    INIT_TURNS
+        INIT_WHILE
         #pragma omp parallel private(tid) shared(counter,start,end,c)
         {		    
             thread_local int mySlot;
@@ -500,7 +525,9 @@ void run_Array_lock(int numthreads, int iterations, int numofiter)
                 start = std::chrono::high_resolution_clock::now();
             while(counter < iterations)
             {
-                c += mylock.lock(&mySlot);
+                u = mylock.lock(&mySlot);
+                c += u;
+                HowOftenWhile[tid*8] += (double)u/iterations;
                 counter = CS(counter,iterations,turns,tid);
                 mylock.unlock(&mySlot);
             }
@@ -515,7 +542,7 @@ void run_Array_lock(int numthreads, int iterations, int numofiter)
         POSTPROCESSING 
     } 
     Timevar = Varianz(Time,numofiter);
-    output("Array_lock",iterations,numthreads,numofiter,totruntime,HowFair,Timevar,BigC);
+    output("Array_lock",iterations,numthreads,numofiter,totruntime,HowFair,Timevar,BigC,HowFairWhile);
 }
 
 ///////////////////////////////////////////////////////////// Array Lock padded
@@ -536,9 +563,10 @@ void run_Array_lock_padded(int numthreads, int iterations, int numofiter)
         auto start = std::chrono::high_resolution_clock::now();
         auto end = std::chrono::high_resolution_clock::now();
 	    counter = 0;
-        std::atomic<int> c;
-        c = 0;
-	INIT_TURNS
+        int u = 0;
+        int c = 0;
+	    INIT_TURNS
+        INIT_WHILE
         #pragma omp parallel private(tid) shared(counter,start,end,c)
         {		    
             thread_local int mySlot;
@@ -548,7 +576,9 @@ void run_Array_lock_padded(int numthreads, int iterations, int numofiter)
                 start = std::chrono::high_resolution_clock::now();
             while(counter < iterations)
             {
-                c += mylock.lock(&mySlot);
+                u = mylock.lock(&mySlot);
+                c += u;
+                HowOftenWhile[tid*8] += (double)u/iterations;
                 counter = CS(counter,iterations,turns,tid);
                 mylock.unlock(&mySlot);
             }
@@ -563,7 +593,7 @@ void run_Array_lock_padded(int numthreads, int iterations, int numofiter)
         POSTPROCESSING 
     } 
     Timevar = Varianz(Time,numofiter);
-    output("Array_lock_padded",iterations,numthreads,numofiter,totruntime,HowFair,Timevar,BigC);
+    output("Array_lock_padded",iterations,numthreads,numofiter,totruntime,HowFair,Timevar,BigC,HowFairWhile);
 }
 
 ///////////////////////////////////////////////////////////// CLH
@@ -584,9 +614,10 @@ void run_CLH_lock(int numthreads, int iterations, int numofiter)
         auto start = std::chrono::high_resolution_clock::now();
         auto end = std::chrono::high_resolution_clock::now();
 	    counter = 0;
-        std::atomic<int> c;
-        c = 0;
-	INIT_TURNS
+        int u = 0;
+        int c = 0;
+	    INIT_TURNS
+        INIT_WHILE
         #pragma omp parallel private(tid) shared(counter,start,end,c)
         {		    
             thread_local QNode* pointerToNode;
@@ -596,7 +627,9 @@ void run_CLH_lock(int numthreads, int iterations, int numofiter)
                 start = std::chrono::high_resolution_clock::now();
             while(counter < iterations)
             {
-                c += mylock.lock(&pointerToNode);
+                u = mylock.lock(&pointerToNode);
+                c += u;
+                HowOftenWhile[tid*8] += (double)u/iterations;
                 counter = CS(counter,iterations,turns,tid);
                 mylock.unlock(pointerToNode);
             }  
@@ -611,7 +644,7 @@ void run_CLH_lock(int numthreads, int iterations, int numofiter)
         
     }   
     Timevar = Varianz(Time,numofiter);
-    output("CLH_lock",iterations,numthreads,numofiter,totruntime,HowFair,Timevar,BigC);
+    output("CLH_lock",iterations,numthreads,numofiter,totruntime,HowFair,Timevar,BigC,HowFairWhile);
 }
 
 ///////////////////////////////////////////////////////////// MCS
@@ -632,9 +665,10 @@ void run_MCS_lock(int numthreads, int iterations, int numofiter)
         auto start = std::chrono::high_resolution_clock::now();
         auto end = std::chrono::high_resolution_clock::now();
 	    counter = 0;
-        std::atomic<int> c;
-        c = 0;
-	INIT_TURNS
+        int u = 0;
+        int c = 0;
+	    INIT_TURNS
+        INIT_WHILE
         #pragma omp parallel private(tid) shared(counter,start,end,c)
         {		    
             thread_local Node my;
@@ -644,7 +678,9 @@ void run_MCS_lock(int numthreads, int iterations, int numofiter)
                 start = std::chrono::high_resolution_clock::now();
             while(counter < iterations)
             {
-                c += mylock.lock(&my);
+                u = mylock.lock(&my);
+                c += u;
+                HowOftenWhile[tid*8] += (double)u/iterations;
                 counter = CS(counter,iterations,turns,tid);
                 mylock.unlock(&my);
             } 
@@ -659,7 +695,7 @@ void run_MCS_lock(int numthreads, int iterations, int numofiter)
         
     }  
     Timevar = Varianz(Time,numofiter);
-    output("MCS_lock",iterations,numthreads,numofiter,totruntime,HowFair,Timevar,BigC);
+    output("MCS_lock",iterations,numthreads,numofiter,totruntime,HowFair,Timevar,BigC,HowFairWhile);
 }
 
 ////////////////////////////////////////////////////////////// Native Lock
@@ -703,7 +739,7 @@ void run_Native_lock(int numthreads, int iterations, int numofiter)
         
     }   
     Timevar = Varianz(Time,numofiter);
-    output("Native_lock",iterations,numthreads,numofiter,totruntime,HowFair,Timevar,5);
+    output("Native_lock",iterations,numthreads,numofiter,totruntime,HowFair,Timevar,5,HowFairWhile);
 }
 
 ///////////////////////////////////////////////////////////// omp critical
@@ -744,7 +780,7 @@ void run_omp_critical(int numthreads, int iterations, int numofiter)
         
     }   
     Timevar = Varianz(Time,numofiter);
-    output("omp_critical",iterations,numthreads,numofiter,totruntime,HowFair,Timevar,5);
+    output("omp_critical",iterations,numthreads,numofiter,totruntime,HowFair,Timevar,5,HowFairWhile);
 }
 
 };
