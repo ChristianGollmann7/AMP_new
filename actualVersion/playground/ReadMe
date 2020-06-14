@@ -1,0 +1,9 @@
+Compilation:
+
+just type in "make" into the console
+
+
+Execution:
+
+Lock can be executed by typing in for example "./Lock 5 20 10000 50"
+the meaning of the parameters is explained in the documentation
