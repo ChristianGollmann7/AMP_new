@@ -1,0 +1,2 @@
+NameOfLock;NumberOfIterations;NumberOfThreads;RunTime;HowFair;Timevar;HowOftenWhile;HowOftenWhileDeviation
+Array_lock_padded;1000;3;0;0.641372;0;516;212.401

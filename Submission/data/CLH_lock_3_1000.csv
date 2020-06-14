@@ -1,0 +1,2 @@
+NameOfLock;NumberOfIterations;NumberOfThreads;RunTime;HowFair;Timevar;HowOftenWhile;HowOftenWhileDeviation
+CLH_lock;1000;3;0;1.44276;0;448;195.664

@@ -7,3 +7,10 @@ Execution:
 
 Lock can be executed by typing in for example "./Lock 5 20 10000 50"
 the meaning of the parameters is explained in the documentation
+
+
+Plotting of results:
+
+Before executing Lock, make sure that there is a folder 'name' provided where the results from the Execution will be stored in.
+To plot the results, open the 'plots' jupyter file and enter the name of the folder 'name' into the second cell and run all cells. Everything will run automatically
+and the plots will be stored in the same folder as the Lock file
